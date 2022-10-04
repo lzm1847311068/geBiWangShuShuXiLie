@@ -97,6 +97,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private static String DOWNLOAD = "";
     private static String BROW_OPEN = "";
     private boolean isStart;
+    private boolean tbIsStart;
+    private boolean jdIsStart;
 
 
     private String todayCount;
@@ -190,6 +192,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         switch (view.getId()){
             case R.id.tv_start:
                 isStart = true;
+                tbIsStart = true;
+                jdIsStart = true;
                 cookie = "";
                 /*
                 先清除掉之前的Handler中的Runnable，不然会和之前的任务一起执行多个
@@ -347,6 +351,29 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                             String title = document.title();
                             if("login".equals(biaoZhi)){
                                 if("任务大厅".equals(title)){
+                                    List tb = document.select("div[class=display-flexbox tb_task_wrapp]").select("em").textNodes();
+                                    List jd = document.select("div[class=display-flexbox jd_task_wrapp]").select("em").textNodes();
+                                    if(todayCount.equals(tb.get(0).toString())){
+                                        tbIsStart = false;
+                                        sendLog("淘宝日已接满");
+                                    }else if(theWeekCount.equals(tb.get(1).toString())){
+                                        tbIsStart = false;
+                                        sendLog("淘宝周已接满");
+                                    }else if(theMonthCount.equals(tb.get(2).toString())){
+                                        tbIsStart = false;
+                                        sendLog("淘宝月已接满");
+                                    }
+
+                                    if(todayCount.equals(jd.get(0).toString())){
+                                        jdIsStart = false;
+                                        sendLog("京东日已接满");
+                                    }else if(theWeekCount.equals(jd.get(1).toString())){
+                                        jdIsStart = false;
+                                        sendLog("京东周已接满");
+                                    }else if(theMonthCount.equals(jd.get(2).toString())){
+                                        jdIsStart = false;
+                                        sendLog("京东月已接满");
+                                    }
                                     getAllTask();
                                 }else if("领取任务".equals(title)){
                                     playMusic(JIE_DAN_SUCCESS,3000,2);
@@ -389,8 +416,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
 
     private void getAllTask(){
-        getTaoBaoTask();
-        getJongDongTask();
+        if(tbIsStart)
+            getTaoBaoTask();
+        if (jdIsStart)
+            getJongDongTask();
     }
 
 
@@ -414,6 +443,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                             if(200 == o.getInteger("status")){
                                 if(o.containsKey("msg")){
                                     sendLog(o.getString("msg"));
+                                    tbIsStart = false;
                                 }else {
                                     int index = o.getString("task").indexOf("=");
                                     String orderId = o.getString("task").substring(index+1,index+1+8);
@@ -453,6 +483,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                         try {
                             /**
                              *
+                             * {"status":300,"msg":"没有任务"}      设置了不再接取京东任务后
+                             * {"status":300,"errStatus":11811111,"msg":"没有任务"}
                             评价： {"status":200,"task":"/index/Apprentice/evaluate?sunsheet_id=427774","stop":1}
                             没绑定京东号： {"status":300,"task":"\/index\/Jdapprentice","errStatus":10001}
                              京东订单是6位数
@@ -470,8 +502,12 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                                     isStart = false;
                                 }
                                 return;
+                            }else if(o.containsKey("task")){
+                                sendLog("京东："+o.getString("msg"));
+                                jdIsStart = false;
+                            }else {
+                                sendLog("京东："+o.getString("msg"));
                             }
-                            sendLog("京东："+o.getString("msg"));
                         }catch (Exception e){
                             sendLog("京东："+e.getMessage());
                         }
@@ -480,6 +516,14 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     @Override
                     public void onError(Response<String> response) {
                         super.onError(response);
+                    }
+
+                    @Override
+                    public void onFinish() {
+                        super.onFinish();
+                        if(!tbIsStart){
+                            jieDan();
+                        }
                     }
                 });
     }
@@ -622,10 +666,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                             BROW_OPEN = ptAddrObj.getString("openUrl");
                             minPl = Integer.parseInt(ptAddrObj.getString("pinLv"));
                             DOWNLOAD = ptAddrObj.getString("apkDownload");
-//                            String[] jieDan = ptAddrObj.getString("apkVersion").split(",");
-//                            todayCount = jieDan[0];
-//                            theWeekCount = jieDan[1];
-//                            theMonthCount = jieDan[2];
+                            String[] jieDan = ptAddrObj.getString("apkVersion").split(",");
+                            todayCount = jieDan[0];
+                            theWeekCount = jieDan[1];
+                            theMonthCount = jieDan[2];
                             //公告弹窗
                             String[] gongGao = ptAddrObj.getString("ptAnnoun").split(";");
                             announcementDialog(gongGao);
