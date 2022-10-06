@@ -100,19 +100,25 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private boolean tbIsStart;
     private boolean jdIsStart;
 
-
     private String todayCount;
     private String theWeekCount;
     private String theMonthCount;
 
 
     private static final String LOGIN = "/index/Apprentice/getlogin.html";
+    private static final String IS_EXIXT_TASK = "/public/index.php/index/Apprentice/receive_task";
+
     private static final String GET_TAOBAO_TASK = "/public/index.php/index/Apprentice/pickup_task";
     private static final String GET_JINGDONG_TASK = "/public/index.php/index/jdapprentice/jd_obtain";
+
     private static final String JINGDONG_LQ_TASK = "/index/Jdapprentice/jreceive_btn_task.html";
     private static final String TAOBAO_LQ_TASK = "/index/Apprentice/cfreceive_btn_task.html";
-    private static final String GET_IMAGE = "/Index/apprentice/referring_task.html";
-    private static final String IS_EXIXT_TASK = "/public/index.php/index/Apprentice/receive_task";
+    //隔天任务领取任务网址             隔天任务参数是sontaskId             /index/browse/browse_receive_task.html
+    //隔天任务image地址   /index/browse/browse_referring.html?sontaskId=38734
+    ///public/index.php/index/Browse/browse_obtain?t=0.8302394486326041 隔天任务接取请求？
+
+    private static final String TB_GET_IMAGE = "/Index/apprentice/referring_task.html";
+    private static final String JD_GET_IMAGE = "/index/Jdapprentice/jreferring_task.html";
 
 
     /**
@@ -437,7 +443,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                              * {"status":300,"errorStatus":115,"msg":"没有任务"}
                              * {"status":200,"task":"\/Index\/Apprentice\/wangwang_info","stop":1,"msg":"旺旺降权"}
                              *{"status":200,"task":"\/Index\/Apprentice\/obta_task?sontaskId=15190557","stop":1}
-                             * 淘宝订单目前发现只有8位数的
+                             *
                              */
                             JSONObject o = JSONObject.parseObject(response.body());
                             if(200 == o.getInteger("status")){
@@ -446,7 +452,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                                     tbIsStart = false;
                                 }else {
                                     int index = o.getString("task").indexOf("=");
-                                    String orderId = o.getString("task").substring(index+1,index+1+8);
+                                    String orderId = o.getString("task").substring(index+1);
                                     //存在任务在领取任务会报   任务不在领取状态
                                     tbLqTask(orderId);
                                     isStart = false;
@@ -497,7 +503,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                                     sendLog("请完成京东评价任务！");
                                 }else {
                                     int index = o.getString("task").indexOf("=");
-                                    String orderId = o.getString("task").substring(index+1,index+1+6);
+                                    String orderId = o.getString("task").substring(index+1);
                                     jdLqTask(orderId);
                                     isStart = false;
                                 }
@@ -532,7 +538,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     private void jdLqTask(String orderId) {
         HttpClient.getInstance().post(JINGDONG_LQ_TASK, LOGIN_URL)
-                .params("sontaskId",orderId)
+                .params("jsontaskId",orderId)
                 .headers("X-Requested-With","XMLHttpRequest")
                 .headers("Cookie",cookie)
                 .execute(new StringCallback() {
@@ -547,7 +553,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                             sendLog2("京东："+o.getString("msg"));
                             if(200 == o.getInteger("status")){
                                 playMusic(JIE_DAN_SUCCESS,3000,2);
-                                getImage(orderId);
+                                getJdImage(orderId);
                                 return;
                             }
                         }catch (Exception e){
@@ -578,7 +584,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                             sendLog2("淘宝："+o.getString("msg"));
                             if(200 == o.getInteger("status")){
                                 playMusic(JIE_DAN_SUCCESS,3000,2);
-                                getImage(orderId);
+                                getTbImage(orderId);
                                 return;
                             }
                         }catch (Exception e){
@@ -593,9 +599,39 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     }
 
 
-    private void getImage(String orderId) {
-        HttpClient.getInstance().get(GET_IMAGE, LOGIN_URL)
+    private void getTbImage(String orderId) {
+        HttpClient.getInstance().get(TB_GET_IMAGE, LOGIN_URL)
                 .params("sontaskId",orderId)
+                .headers("X-Requested-With","XMLHttpRequest")
+                .headers("Cookie",cookie)
+                .execute(new StringCallback() {
+                    @Override
+                    public void onSuccess(Response<String> response) {
+                        try {
+                            Object o = JSONObject.parse(response.body());
+                            Document document = Jsoup.parse(o.toString());
+                            String img = document.select("img[class=main_link]").attr("src");
+                            String guanJianZi = document.select("input[class=key_word_hidden]").attr("value");
+
+                            sendLog2("-------------------------");
+                            sendLog2("搜索关键字："+guanJianZi);
+                            sendLog2("-------------------------");
+                            sendLog2("商品图："+img);
+                        }catch (Exception e){
+                            sendLog("获取商品详情："+e.getMessage());
+                        }
+                    }
+                    @Override
+                    public void onError(Response<String> response) {
+                        super.onError(response);
+                    }
+                });
+    }
+
+
+    private void getJdImage(String orderId) {
+        HttpClient.getInstance().get(JD_GET_IMAGE, LOGIN_URL)
+                .params("jsontaskId",orderId)
                 .headers("X-Requested-With","XMLHttpRequest")
                 .headers("Cookie",cookie)
                 .execute(new StringCallback() {
