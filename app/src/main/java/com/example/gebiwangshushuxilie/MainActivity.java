@@ -352,58 +352,63 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     @Override
                     public void onSuccess(Response<String> response) {
                         try {
-                            Object o = JSONObject.parse(response.body());
-                            Document document = Jsoup.parse(o.toString());
-                            String title = document.title();
-                            if("login".equals(biaoZhi)){
-                                if("任务大厅".equals(title)){
-                                    List tb = document.select("div[class=display-flexbox tb_task_wrapp]").select("em").textNodes();
-                                    List jd = document.select("div[class=display-flexbox jd_task_wrapp]").select("em").textNodes();
-                                    if(todayCount.equals(tb.get(0).toString())){
-                                        tbIsStart = false;
-                                        sendLog("淘宝日已接满");
-                                    }else if(theWeekCount.equals(tb.get(1).toString())){
-                                        tbIsStart = false;
-                                        sendLog("淘宝周已接满");
-                                    }else if(theMonthCount.equals(tb.get(2).toString())){
-                                        tbIsStart = false;
-                                        sendLog("淘宝月已接满");
-                                    }
-
-                                    if(todayCount.equals(jd.get(0).toString())){
-                                        jdIsStart = false;
-                                        sendLog("京东日已接满");
-                                    }else if(theWeekCount.equals(jd.get(1).toString())){
-                                        jdIsStart = false;
-                                        sendLog("京东周已接满");
-                                    }else if(theMonthCount.equals(jd.get(2).toString())){
-                                        jdIsStart = false;
-                                        sendLog("京东月已接满");
-                                    }
-                                    getAllTask();
-                                }else if("领取任务".equals(title)){
-                                    playMusic(JIE_DAN_SUCCESS,3000,2);
-                                    String img = document.select("img[class=main_link]").attr("src");
-                                    String guanJianZi = document.select("input[class=key_word_hidden]").attr("value");
-                                    sendLog2("-------------------------");
-                                    sendLog2("搜索关键字："+guanJianZi);
-                                    sendLog2("-------------------------");
-                                    sendLog2("商品图："+img);
-                                }else {
-                                    sendLog("未知标题，请截图联系软件开发者");
-                                }
+                            String url = response.getRawResponse().request().url().toString();
+                            if(url.contains("evaluate.html")){
+                                sendLog("请先完成评价任务！");
+                                playMusic(JIE_DAN_FAIL,3000,0);
                             }else {
-                                if("任务大厅".equals(title)){
-                                    sendLog("无可操作任务，请先领取任务！");
-                                }else if("领取任务".equals(title)){
-                                    String img = document.select("img[class=main_link]").attr("src");
-                                    String guanJianZi = document.select("input[class=key_word_hidden]").attr("value");
-                                    sendLog2("-------------------------");
-                                    sendLog2("搜索关键字："+guanJianZi);
-                                    sendLog2("-------------------------");
-                                    sendLog2("商品图："+img);
+                                Object o = JSONObject.parse(response.body());
+                                Document document = Jsoup.parse(o.toString());
+                                String title = document.title();
+                                if("login".equals(biaoZhi)){
+                                    if("任务大厅".equals(title)){
+                                        List tb = document.select("div[class=display-flexbox tb_task_wrapp]").select("em").textNodes();
+                                        List jd = document.select("div[class=display-flexbox jd_task_wrapp]").select("em").textNodes();
+                                        if(todayCount.equals(tb.get(0).toString())){
+                                            tbIsStart = false;
+                                            sendLog("淘宝日已接满");
+                                        }else if(theWeekCount.equals(tb.get(1).toString())){
+                                            tbIsStart = false;
+                                            sendLog("淘宝周已接满");
+                                        }else if(theMonthCount.equals(tb.get(2).toString())){
+                                            tbIsStart = false;
+                                            sendLog("淘宝月已接满");
+                                        }
+                                        if(todayCount.equals(jd.get(0).toString())){
+                                            jdIsStart = false;
+                                            sendLog("京东日已接满");
+                                        }else if(theWeekCount.equals(jd.get(1).toString())){
+                                            jdIsStart = false;
+                                            sendLog("京东周已接满");
+                                        }else if(theMonthCount.equals(jd.get(2).toString())){
+                                            jdIsStart = false;
+                                            sendLog("京东月已接满");
+                                        }
+                                        getAllTask();
+                                    }else if("领取任务".equals(title)){
+                                        playMusic(JIE_DAN_SUCCESS,3000,2);
+                                        String img = document.select("img[class=main_link]").attr("src");
+                                        String guanJianZi = document.select("input[class=key_word_hidden]").attr("value");
+                                        sendLog2("-------------------------");
+                                        sendLog2("搜索关键字："+guanJianZi);
+                                        sendLog2("-------------------------");
+                                        sendLog2("商品图："+img);
+                                    }else {
+                                        sendLog("未知标题，请截图联系软件开发者");
+                                    }
                                 }else {
-                                    sendLog("未知标题，请截图联系软件开发者");
+                                    if("任务大厅".equals(title)){
+                                        sendLog("无可操作任务，请先领取任务！");
+                                    }else if("领取任务".equals(title)){
+                                        String img = document.select("img[class=main_link]").attr("src");
+                                        String guanJianZi = document.select("input[class=key_word_hidden]").attr("value");
+                                        sendLog2("-------------------------");
+                                        sendLog2("搜索关键字："+guanJianZi);
+                                        sendLog2("-------------------------");
+                                        sendLog2("商品图："+img);
+                                    }else {
+                                        sendLog("未知标题，请截图联系软件开发者");
+                                    }
                                 }
                             }
                         }catch (Exception e){
